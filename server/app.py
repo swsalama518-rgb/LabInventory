@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from urllib.parse import quote
 
 import requests
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import (
@@ -16,18 +17,28 @@ from flask_jwt_extended import (
 from models import db, Lab, User, Category, Supply, SupplyRequest
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 CAS_RE = re.compile(r"^\d{2,7}-\d{2}-\d$")
 DEFAULT_CATEGORIES = ["Reagents", "Consumables", "Equipment", "Chemicals"]
 PUBCHEM_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY")
+if not SECRET_KEY or not JWT_SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY and JWT_SECRET_KEY must be set. Copy server/.env.example to "
+        "server/.env and fill in real values (see README)."
+    )
 
 app = Flask(__name__)
 
 CORS(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key-change-later")
-app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "secret-key-change-later")
+app.config["SECRET_KEY"] = SECRET_KEY
+app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
 
 db.init_app(app)
 jwt = JWTManager(app)

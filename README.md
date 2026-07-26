@@ -50,7 +50,16 @@ cd server
 python3 -m venv venv          # first time only
 source venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env          # then edit .env with your own random secrets
 python app.py
+```
+
+`.env` holds `SECRET_KEY` and `JWT_SECRET_KEY` — it's git-ignored and never
+committed. The app refuses to start without both set (see `server/app.py`);
+generate real values however you like, e.g.:
+
+```bash
+python3 -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 Tables and default categories are created automatically on first run. To
@@ -141,8 +150,9 @@ pending.
 
 ## Notes
 
-- `SECRET_KEY` / `JWT_SECRET_KEY` fall back to dev defaults in `app.py` —
-  override via environment variables before deploying.
+- `SECRET_KEY` and `JWT_SECRET_KEY` are loaded from `server/.env` (see
+  `server/.env.example`) via `python-dotenv` — never hardcoded, never
+  committed. The app raises a clear error on startup if either is missing.
 - Categories are shared across all labs; supplies and restock requests are
   scoped to a single lab.
 
@@ -150,8 +160,6 @@ pending.
 
 - **Not deployed yet.** Runs locally only (Flask on :5050, Vite on :5173);
   no Render/hosted link yet.
-- **Dev-only secrets.** `SECRET_KEY` and `JWT_SECRET_KEY` are hardcoded dev
-  fallbacks in `app.py` — must be set via real env vars before any deploy.
 - **No password reset / email verification.** Register + login only.
 - **JWTs never expire via refresh.** Access tokens use Flask-JWT-Extended's
   default expiry with no refresh-token flow; once expired, user must log in
