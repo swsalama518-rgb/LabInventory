@@ -169,7 +169,7 @@ def send_email(to_email, subject, body):
     msg["To"] = to_email
     msg.set_content(body)
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
         server.starttls()
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(msg)
@@ -880,19 +880,30 @@ def check_reminders():
     ).all()
 
     sent = 0
+    failed = 0
     for log in due:
         recipient = log.created_by.email if log.created_by else None
+        email_ok = True
         if recipient:
             body = (
                 f"Incubation done: \"{log.sample_name}\" in {log.equipment.name} "
                 f"finished at {log.ends_at.isoformat()}. Please pick up the sample."
             )
-            if send_email(recipient, f"Pick up: {log.sample_name} ({log.equipment.name})", body):
-                sent += 1
-        log.reminder_sent_at = now
+            try:
+                if send_email(recipient, f"Pick up: {log.sample_name} ({log.equipment.name})", body):
+                    sent += 1
+            except Exception:
+                # Don't let a transient SMTP failure crash the whole check or
+                # silently mark this reminder as sent — leave it for retry on
+                # the next scheduled call.
+                app.logger.exception("Failed to send reminder email for log %s", log.id)
+                email_ok = False
+                failed += 1
+        if email_ok:
+            log.reminder_sent_at = now
 
     db.session.commit()
-    return jsonify({"checked": len(due), "emails_sent": sent}), 200
+    return jsonify({"checked": len(due), "emails_sent": sent, "emails_failed": failed}), 200
 
 
 # ---------- Dashboard ----------
