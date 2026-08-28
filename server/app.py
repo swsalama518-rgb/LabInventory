@@ -17,6 +17,8 @@ from flask_jwt_extended import (
     current_user as _jwt_current_user,
 )
 
+from sqlalchemy import inspect
+
 from models import db, Lab, User, Category, Supply, SupplyRequest, Equipment, IncubationLog
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -944,8 +946,10 @@ def expired_token(_header, _payload):
 
 
 def _column_exists(conn, table, column):
-    rows = conn.execute(db.text(f"PRAGMA table_info({table})")).fetchall()
-    return any(row[1] == column for row in rows)
+    # Dialect-agnostic (works on both SQLite and Postgres), unlike raw
+    # "PRAGMA table_info" which only SQLite understands.
+    columns = [col["name"] for col in inspect(conn).get_columns(table)]
+    return column in columns
 
 
 with app.app_context():
