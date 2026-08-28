@@ -17,7 +17,7 @@ services:
         sync: false
       - key: CORS_ORIGINS
         sync: false
-      - key: ALLOWED_EMAIL_DOMAIN
+      - key: ALLOWED_EMAIL_DOMAINS
         sync: false
       - key: SMTP_HOST
         sync: false

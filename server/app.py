@@ -55,9 +55,13 @@ if not SECRET_KEY or not JWT_SECRET_KEY:
         "server/.env and fill in real values (see README)."
     )
 
-# Optional: restrict signup to one email domain (e.g. a university), set via
-# .env. Leave unset to allow any email domain.
-ALLOWED_EMAIL_DOMAIN = (os.environ.get("ALLOWED_EMAIL_DOMAIN") or "").strip().lower().lstrip("@")
+# Optional: restrict signup to one or more email domains (e.g. a
+# university's), comma-separated. Leave unset to allow any email domain.
+ALLOWED_EMAIL_DOMAINS = [
+    d.strip().lower().lstrip("@")
+    for d in (os.environ.get("ALLOWED_EMAIL_DOMAINS") or "").split(",")
+    if d.strip()
+]
 
 # Comma-separated list of allowed frontend origins for CORS, e.g.
 # "https://labinventory.onrender.com". Defaults to "*" for local dev.
@@ -188,8 +192,9 @@ def register():
 
     if not email or not EMAIL_RE.match(email):
         return jsonify({"error": "A valid email is required"}), 400
-    if ALLOWED_EMAIL_DOMAIN and not email.endswith(f"@{ALLOWED_EMAIL_DOMAIN}"):
-        return jsonify({"error": f"Email must be a @{ALLOWED_EMAIL_DOMAIN} address"}), 400
+    if ALLOWED_EMAIL_DOMAINS and not any(email.endswith(f"@{d}") for d in ALLOWED_EMAIL_DOMAINS):
+        allowed = ", ".join(f"@{d}" for d in ALLOWED_EMAIL_DOMAINS)
+        return jsonify({"error": f"Email must be one of: {allowed}"}), 400
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
     if not lab_name:
