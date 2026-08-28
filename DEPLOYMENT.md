@@ -78,9 +78,9 @@ Open your frontend URL. Sign up as the first user of a new lab (you'll become it
 
 The app has a `/api/reminders/check` endpoint that emails whoever started an incubation once it's done, but nothing calls it automatically on the free tier. Two things needed:
 
-**A. An SMTP provider** (for actually sending email) — e.g. [Resend](https://resend.com)'s free tier gives you SMTP credentials. On **labinventory-api**, set:
-- `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD` (from your provider)
-- `FROM_EMAIL` (an address your provider lets you send from)
+**A. A Resend account** (for actually sending email) — sign up free at [resend.com](https://resend.com), grab an API key from **API Keys** in the sidebar. Email is sent via Resend's HTTP API rather than SMTP, since most free-tier hosts (including Render) block outbound SMTP ports entirely. On **labinventory-api**, set:
+- `RESEND_API_KEY` (the key from Resend)
+- `FROM_EMAIL` — use `onboarding@resend.dev` to start (works immediately, no setup), or your own verified domain address later
 
 **B. A free scheduler** to actually call the endpoint every few minutes — e.g. [cron-job.org](https://cron-job.org) (free account):
 1. Create a new cron job.

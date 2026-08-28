@@ -1,8 +1,6 @@
 import os
 import re
-import smtplib
 from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 from urllib.parse import quote
 
 import requests
@@ -35,13 +33,12 @@ COORDINATOR_ROLE = "coordinator"
 ROLE_CHOICES = ["coordinator", "faculty", "grad_student", "undergrad", "staff"]
 JOINABLE_ROLES = ["faculty", "grad_student", "undergrad", "staff"]
 
-# Optional: outgoing email for incubation-end reminders. Leave unset to skip
-# sending (the /api/reminders/check endpoint still runs, just sends nothing).
-SMTP_HOST = os.environ.get("SMTP_HOST")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-SMTP_USER = os.environ.get("SMTP_USER")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
-FROM_EMAIL = os.environ.get("FROM_EMAIL", SMTP_USER)
+# Optional: outgoing email for incubation-end reminders, sent via Resend's
+# HTTP API (not SMTP — most PaaS free tiers, including Render's, block
+# outbound SMTP ports). Leave unset to skip sending (the
+# /api/reminders/check endpoint still runs, just sends nothing).
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+FROM_EMAIL = os.environ.get("FROM_EMAIL")
 # Shared secret an external scheduler (e.g. cron-job.org) presents to trigger
 # a reminder check, since there's no logged-in user making that request.
 REMINDER_SECRET = os.environ.get("REMINDER_SECRET")
@@ -158,21 +155,19 @@ def pubchem_lookup(name):
 
 
 def send_email(to_email, subject, body):
-    """Send a plain-text email over SMTP. No-ops (returns False) if SMTP isn't
-    configured, so the reminder-check endpoint still works without email set up."""
-    if not (SMTP_HOST and SMTP_USER and SMTP_PASSWORD and FROM_EMAIL):
+    """Send a plain-text email via Resend's HTTP API. No-ops (returns False)
+    if it isn't configured, so the reminder-check endpoint still works
+    without email set up."""
+    if not (RESEND_API_KEY and FROM_EMAIL):
         return False
 
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = FROM_EMAIL
-    msg["To"] = to_email
-    msg.set_content(body)
-
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(msg)
+    resp = requests.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
+        json={"from": FROM_EMAIL, "to": [to_email], "subject": subject, "text": body},
+        timeout=10,
+    )
+    resp.raise_for_status()
     return True
 
 
