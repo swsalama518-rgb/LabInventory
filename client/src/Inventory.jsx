@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import api from "./api.js";
+import api, { chipColor } from "./api.js";
 
 const SAMPLE_ITEMS = {
   reagents: [
@@ -294,13 +294,21 @@ function Inventory() {
               {supplies.map((s) => (
                 <tr key={s.id} className={s.is_low_stock ? "row-low-stock" : ""}>
                   <td>{s.name}</td>
-                  <td>{s.category_name || "—"}</td>
                   <td>
+                    {s.category_name ? (
+                      <span className={`chip chip-${chipColor(s.category_id)}`}>
+                        {s.category_name}
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="mono">
                     {s.quantity} {s.unit || ""}
                     {s.is_low_stock && <span className="badge-low">Low</span>}
                   </td>
                   <td>{s.location || "—"}</td>
-                  <td>{s.expiration_date || "—"}</td>
+                  <td className="mono">{s.expiration_date || "—"}</td>
                   <td className="table-actions">
                     <button className="btn-link" onClick={() => openRequestForm(s)}>
                       Request
@@ -480,7 +488,7 @@ function Inventory() {
             <h2>Request Restock: {requestSupply.name}</h2>
             {requestError && <div className="auth-error">{requestError}</div>}
             <p className="field-hint">
-              This sends a restock request to your lab admin for approval — it
+              This sends a restock request to your lab coordinator for approval — it
               doesn't change the current quantity.
             </p>
 

@@ -6,6 +6,8 @@ import Dashboard from "./Dashboard.jsx";
 import Inventory from "./Inventory.jsx";
 import Categories from "./Categories.jsx";
 import Requests from "./Requests.jsx";
+import Members from "./Members.jsx";
+import EquipmentLog from "./EquipmentLog.jsx";
 import Nav from "./Nav.jsx";
 import "./App.css";
 
@@ -28,6 +30,14 @@ function App() {
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
+  }
+
+  function handleLabRenamed(newName) {
+    setUser((prev) => {
+      const updated = { ...prev, lab_name: newName };
+      localStorage.setItem("user", JSON.stringify(updated));
+      return updated;
+    });
   }
 
   function ProtectedLayout() {
@@ -57,6 +67,17 @@ function App() {
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/requests" element={<Requests user={user} />} />
+        <Route path="/equipment" element={<EquipmentLog />} />
+        <Route
+          path="/members"
+          element={
+            user?.role === "coordinator" ? (
+              <Members user={user} onLabRenamed={handleLabRenamed} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

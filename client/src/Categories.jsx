@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "./api.js";
+import api, { chipColor } from "./api.js";
 
 function Categories() {
   const [categories, setCategories] = useState([]);
@@ -114,7 +114,7 @@ function Categories() {
                   </form>
                 ) : (
                   <>
-                    <span className="chip">{c.name}</span>
+                    <span className={`chip chip-${chipColor(c.id)}`}>{c.name}</span>
                     <span className="category-row-actions">
                       <button className="btn-link" onClick={() => startEdit(c)}>
                         Rename

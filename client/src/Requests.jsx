@@ -18,7 +18,7 @@ function Requests({ user }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "coordinator";
 
   function load() {
     return Promise.all([

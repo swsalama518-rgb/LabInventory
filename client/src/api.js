@@ -1,6 +1,20 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5050/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5050/api";
+
+export const ROLE_LABELS = {
+  coordinator: "Lab Coordinator",
+  faculty: "Faculty",
+  grad_student: "Graduate Student",
+  undergrad: "Undergrad",
+  staff: "Staff",
+};
+
+const CHIP_COLORS = ["blue", "purple", "teal", "amber", "green", "rose"];
+
+export function chipColor(id) {
+  return CHIP_COLORS[id % CHIP_COLORS.length];
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

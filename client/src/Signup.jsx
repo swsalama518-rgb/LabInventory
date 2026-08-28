@@ -1,15 +1,24 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "./api.js";
+import Icon from "./Icon.jsx";
+
+const ROLE_OPTIONS = [
+  { value: "faculty", label: "Faculty" },
+  { value: "grad_student", label: "Graduate Student" },
+  { value: "undergrad", label: "Undergrad" },
+  { value: "staff", label: "Staff" },
+];
 
 function Signup({ onAuth }) {
   const [email, setEmail] = useState("");
   const [labName, setLabName] = useState("");
-  const [role, setRole] = useState("tech");
+  const [role, setRole] = useState("staff");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState("");
   const navigate = useNavigate();
 
   async function handleSubmit(e) {
@@ -28,6 +37,10 @@ function Signup({ onAuth }) {
     setLoading(true);
     try {
       const res = await api.post("/register", { email, password, lab_name: labName, role });
+      if (res.data.pending) {
+        setPendingMessage(res.data.message);
+        return;
+      }
       onAuth(res.data.access_token, res.data.user);
       navigate("/");
     } catch (err) {
@@ -37,10 +50,24 @@ function Signup({ onAuth }) {
     }
   }
 
+  if (pendingMessage) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+          <h1 className="auth-brand"><Icon name="flask" />Lab Manager</h1>
+          <p className="auth-subtitle">{pendingMessage}</p>
+          <p className="auth-switch">
+            <Link to="/login">Back to login</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>LabInventory</h1>
+        <h1 className="auth-brand"><Icon name="flask" />Lab Manager</h1>
         <p className="auth-subtitle">Create an account to get started</p>
 
         {error && <div className="auth-error">{error}</div>}
@@ -65,17 +92,22 @@ function Signup({ onAuth }) {
           required
         />
         <p className="field-hint">
-          New name creates that lab. Existing name joins it.
+          New name creates that lab and makes you its Lab Coordinator.
+          Existing name sends a join request to that lab's coordinator —
+          you'll be able to log in once approved.
         </p>
 
-        <label htmlFor="role">Role</label>
+        <label htmlFor="role">Your role</label>
         <select id="role" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="tech">Lab Tech</option>
-          <option value="admin">Admin</option>
+          {ROLE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
         <p className="field-hint">
-          Admins can approve or reject restock requests; lab techs can submit
-          them. Both can manage the lab's inventory.
+          Only used if you're joining an existing lab (ignored if you're
+          creating a new one — you'll be its Lab Coordinator instead).
         </p>
 
         <label htmlFor="password">Password</label>
