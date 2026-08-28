@@ -81,6 +81,7 @@ The app has a `/api/reminders/check` endpoint that emails whoever started an inc
 **A. A Resend account** (for actually sending email) — sign up free at [resend.com](https://resend.com), grab an API key from **API Keys** in the sidebar. Email is sent via Resend's HTTP API rather than SMTP, since most free-tier hosts (including Render) block outbound SMTP ports entirely. On **labinventory-api**, set:
 - `RESEND_API_KEY` (the key from Resend)
 - `FROM_EMAIL` — use `onboarding@resend.dev` to start (works immediately, no setup), or your own verified domain address later
+- `NOTIFY_EMAIL` — **required until you verify a domain in Resend.** Resend's free tier only delivers to the email address you signed up with, not to arbitrary lab members. Set this to that address, and every reminder goes there instead of to whoever logged the sample (the email body says who it's for). Once you verify a domain, remove this variable to switch to per-researcher emails.
 
 **B. A free scheduler** to actually call the endpoint every few minutes — e.g. [cron-job.org](https://cron-job.org) (free account):
 1. Create a new cron job.

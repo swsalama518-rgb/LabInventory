@@ -39,6 +39,10 @@ JOINABLE_ROLES = ["faculty", "grad_student", "undergrad", "staff"]
 # /api/reminders/check endpoint still runs, just sends nothing).
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 FROM_EMAIL = os.environ.get("FROM_EMAIL")
+# Optional: send every reminder to one fixed address instead of whoever
+# logged the sample. Needed on Resend's free tier, which only delivers to
+# the account owner's own email until a sending domain is verified.
+NOTIFY_EMAIL = os.environ.get("NOTIFY_EMAIL")
 # Shared secret an external scheduler (e.g. cron-job.org) presents to trigger
 # a reminder check, since there's no logged-in user making that request.
 REMINDER_SECRET = os.environ.get("REMINDER_SECRET")
@@ -877,12 +881,14 @@ def check_reminders():
     sent = 0
     failed = 0
     for log in due:
-        recipient = log.created_by.email if log.created_by else None
+        recipient = NOTIFY_EMAIL or (log.created_by.email if log.created_by else None)
         email_ok = True
         if recipient:
+            who = log.researcher_name or (log.created_by.email if log.created_by else "unknown")
             body = (
-                f"Incubation done: \"{log.sample_name}\" in {log.equipment.name} "
-                f"finished at {log.ends_at.isoformat()}. Please pick up the sample."
+                f"Incubation done: \"{log.sample_name}\" ({log.sample_count}) in "
+                f"{log.equipment.name}, logged for {who}, finished at "
+                f"{log.ends_at.isoformat()}. Please pick up the sample."
             )
             try:
                 if send_email(recipient, f"Pick up: {log.sample_name} ({log.equipment.name})", body):
